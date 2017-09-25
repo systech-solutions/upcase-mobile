@@ -1,3 +1,5 @@
+# vim: ft=ruby
+
 desc "Bump the iOS and Android version with a commit and tag."
 lane :bump_version do |options|
   type = options.fetch(:type)
