@@ -42,7 +42,7 @@ Bump the iOS and Android version with a commit and tag.
 ```
 fastlane ios build
 ```
-Bulid the app with the specified `scheme`. Defaults to `Upcase`.
+Build the app with the specified `scheme`. Defaults to `Upcase`.
 ### ios beta
 ```
 fastlane ios beta
