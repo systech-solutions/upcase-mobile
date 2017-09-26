@@ -20,7 +20,7 @@ platform :ios do
   lane :build do |options|
     scheme = options.fetch(:scheme, "Upcase")
 
-    gym(scheme: scheme, include_bitcode: true)
+    gym(project: "ios/Upcase.xcodeproj", scheme: scheme, include_bitcode: true)
   end
 
   desc "Submit a new Beta Build to Apple TestFlight"
