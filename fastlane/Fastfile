@@ -48,7 +48,7 @@ end
 platform :ios do
   desc 'Build the iOS app'
   lane :build do
-    gym
+    gym(export_xcargs: "-allowProvisioningUpdates")
   end
 
   desc 'Submit a new iOS build to Apple TestFlight'
