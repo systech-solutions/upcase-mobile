@@ -1,73 +1,88 @@
 # vim: ft=ruby
+# Customise this file, documentation can be found here:
+# https://github.com/KrauseFx/fastlane/tree/master/docs
+# All available actions: https://github.com/KrauseFx/fastlane/blob/master/docs/Actions.md
+# can also be listed using the `fastlane actions` command
 
-desc "Bump the iOS and Android version with a commit and tag."
+desc 'Bump the app versions and tag a new release'
 lane :bump_version do |options|
-  type = options.fetch(:type)
+  type = options.fetch(:type, 'build')
+  should_push = options.fetch(:push, true)
 
-  case type
-  when "major", "minor", "patch"
-    increment_version_number(bump_type: type)
-    update_android_version_name(version: get_version_number)
-  else
-    raise "Invalid bump type '#{type}'"
+  # Increment the iOS build number
+  increment_build_number
+
+  if type != 'build'
+    # Bump the iOS version number
+    increment_version_number(
+      bump_type: type
+    )
   end
 
-  commit_tag_and_push_version_bump
+  build_number = get_build_number
+  version = get_version_number
+
+  # Set the Android version to match iOS
+  set_android_version(
+    version_name: version,
+    version_code: build_number
+  )
+
+  git_commit(
+    path: %w(
+      ios/Upcase.xcodeproj/project.pbxproj
+      ios/Upcase/Info.plist
+      ios/UpcaseTests/Info.plist
+      android/app/build.gradle
+    ),
+    message: "Bump version to #{version} (#{build_number})"
+  )
+
+  add_git_tag(tag: "v#{version}+#{build_number}")
+
+  if should_push
+    push_to_git_remote
+  end
 end
 
 platform :ios do
-  desc "Build the app with the specified `scheme`. Defaults to `Upcase`."
-  lane :build do |options|
-    scheme = options.fetch(:scheme, "Upcase")
-
-    gym(project: "ios/Upcase.xcodeproj", scheme: scheme, include_bitcode: true)
+  desc 'Build the iOS app'
+  lane :build do
+    gym
   end
 
-  desc "Submit a new Beta Build to Apple TestFlight"
+  desc 'Submit a new iOS build to Apple TestFlight'
   lane :beta do
     build
-    testflight
+    testflight(skip_waiting_for_build_processing: true)
+  end
+
+  desc 'Submit a new iOS build to the Apple App Store (synonym for :beta)'
+  lane :release do
+    build
+    testflight(skip_waiting_for_build_processing: true)
   end
 end
 
 platform :android do
-  desc "Build the app apk for the specified build `type`. Defaults to `Release`"
-  lane :build do |options|
-    type = options.fetch(:type, "Release")
-
-    gradle(task: "clean")
-    gradle(task: "assemble", build_type: type)
-  end
-end
-
-def update_android_version_name(version:)
-  build_gradle_path = File.join(
-    "..",
-    ENV.fetch("ANDROID_DIRECTORY"),
-    "app",
-    "build.gradle"
-  )
-
-  File.write(
-    build_gradle_path,
-    File.read(build_gradle_path).gsub(
-      /versionName\s+"(.+)"/,
-      "versionName \"#{version}\"",
+  desc 'Build the Android app'
+  lane :build do
+    gradle(task: 'clean')
+    gradle(
+      task: 'assemble',
+      build_type: 'Release'
     )
-  )
-end
+  end
 
-def commit_tag_and_push_version_bump
-  build_number = get_build_number
-  version_number = get_version_number
-  git_commit(
-    path: [
-      "android/app/build.gradle",
-      "ios/Upcase/Info.plist",
-      "ios/UpcaseTests/Info.plist",
-    ],
-    message: "Bump version to #{version_number} (#{build_number})",
-  )
-  add_git_tag(tag: "v#{version_number}+#{build_number}")
-  push_to_git_remote
+  desc 'Submit a new Android build to the Google Play beta channel'
+  lane :beta do
+    build
+    supply(track: 'beta')
+  end
+
+  desc 'Submit a new Android build to the Google Play production channel'
+  lane :release do
+    build
+    supply(track: 'production')
+  end
 end

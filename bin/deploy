@@ -1,0 +1,83 @@
+#!/bin/sh
+
+set -e
+
+error(){
+  red="\e[1;31m"
+  reset="\e[0m"
+  printf "${red}%s${reset}\n" "$1"  >&2
+}
+
+info(){
+  printf "%s\n" "$1"
+}
+
+usage='bin/deploy
+Build and publish a new release to the Apple and Android app stores
+
+usage: bin/deploy [-h | --help] [--beta | --release] [VERSION_BUMP_TYPE]
+
+  -h | --help           Print this usage documentation and exit
+
+  --beta                DEFAULT - Deploy the apps to the beta channels of the
+                        respective stores.
+
+  --release             Deploy the apps to the production channels of the
+                        respective stores.
+
+  The VERSION_BUMP_TYPE argument is optional and allows you to specify what
+  type of release to build and publish. It can be one of the following:
+
+  build                 DEFAULT - Will only increment the build number, leaving
+                        the version info untouched.
+
+  patch                 Deploy a patch release. This will increment the patch
+                        number (0.0.X).
+
+  minor                 Deploy a minor release. This will increment the minor
+                        release number (0.X.0).
+
+  major                 Deploy a major release. This will increment the major
+                        release number (X.0.0).
+'
+
+target="beta"
+
+case $1 in
+  --release)
+    target="release"
+    shift
+    ;;
+  --beta)
+    target="beta"
+    shift
+    ;;
+esac
+
+case $1 in
+  --release|--beta)
+    error "Invalid configuration, can't specify multiple targets"
+    exit 1
+    ;;
+  --help|-h)
+    info "$usage"
+    exit 0
+    ;;
+esac
+
+type="${1:-build}"
+
+case "$type" in
+  build|patch|minor|major)
+    info "Deploying to $target with version bump type: $type"
+    ;;
+  *)
+    error "Invalid build type: $type"
+    error "Available types: build patch minor major"
+    exit 1
+    ;;
+esac
+
+bundle exec fastlane bump_version type:"$type"
+bundle exec fastlane android "$target"
+bundle exec fastlane ios "$target"

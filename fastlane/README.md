@@ -33,7 +33,7 @@ xcode-select --install
 ```
 fastlane bump_version
 ```
-Bump the iOS and Android version with a commit and tag.
+Bump the app versions and tag a new release
 
 ----
 
@@ -42,12 +42,17 @@ Bump the iOS and Android version with a commit and tag.
 ```
 fastlane ios build
 ```
-Build the app with the specified `scheme`. Defaults to `Upcase`.
+Build the iOS app
 ### ios beta
 ```
 fastlane ios beta
 ```
-Submit a new Beta Build to Apple TestFlight
+Submit a new iOS build to Apple TestFlight
+### ios release
+```
+fastlane ios release
+```
+Submit a new iOS build to the Apple App Store (synonym for :beta)
 
 ----
 
@@ -56,7 +61,17 @@ Submit a new Beta Build to Apple TestFlight
 ```
 fastlane android build
 ```
-Build the app apk for the specified build `type`. Defaults to `Release`
+Build the Android app
+### android beta
+```
+fastlane android beta
+```
+Submit a new Android build to the Google Play beta channel
+### android release
+```
+fastlane android release
+```
+Submit a new Android build to the Google Play production channel
 
 ----
 
